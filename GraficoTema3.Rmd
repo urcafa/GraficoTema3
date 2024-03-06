@@ -1,0 +1,73 @@
+---
+title: "GraficoTema3"
+author: "Carlos Mateo Martínez, Francisco Isaac Pazmiño Morales, Úrsula Casaus Fabra y Arnau Julio Candel" 
+date: "2024-03-06"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#En primer lugar, cargamos las librerías que vamos a utilizar para crear el gráfico
+
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(zoo)
+library(plotly)
+
+#Cargamos los datos que vamos a utilizar:
+
+fichero <- read.csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
+
+#Ahora, filtramos los datos de los países relevantes para realizar la gráfica
+
+filtrado <- fichero %>%
+  filter(location %in% c("United States", "Italy", "France", "Germany", "Canada", "Japan", "United Kingdom", "Spain")) %>%
+  group_by(location) %>%
+  mutate(deaths_per_million_7day_avg = rollmean(new_deaths_smoothed_per_million, 7, fill = NA, align = 'right'))
+
+#Transformamos la columna date del data frame que hemos creado antes, llamado filtrado, donde las fechas estan en formato texto. Con el siguiente código, transformamos estas fechas a formato fecha para que al realizar el gráfico no nos reporte problemas con ello.
+
+filtrado <- filtrado %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+#Almacenamos en una variable, que llamaremos fechas, las fechas que usaremos para representar los datos en la gráfica a lo largo del tiempo:
+
+fechas <- as.Date(c("2020-02-13", "2020-08-08", "2021-02-24", "2021-08-08", "2022-02-28", "2022-08-08", "2023-02-28", "2023-08-18", "2024-02-10"))
+
+#Lo siguiente es crear un gráfico con los datos del nuevo data frame que hemos creado a partir del data frame original, que contiene los datos que realmente necesitamos para representar en el gráfico.
+
+grafico <- ggplot(filtrado, aes(x = date, y = deaths_per_million_7day_avg, color = location, group = location)) +
+  geom_line(aes(size = location == 'Spain')) + 
+  scale_size_manual(values = c("TRUE" = 1, "FALSE" = 0.5)) + 
+  scale_color_manual(values = c("United States" = "purple", "Italy" = "blue", "France" = "orange", 
+                                "Germany" = "green", "Canada" = "brown", "Japan" = "grey", 
+                                "United Kingdom" = "pink", "Spain" = "red")) +
+  scale_x_date(breaks = fechas, date_labels = "%d %b %Y") +
+  theme_minimal() +
+  labs(title = "Grupo S", 
+       subtitle = "Grafico de la evolucion de las muertes por COVID-19 hasta la fecha actual",
+       caption = "Source: Johns Hopkins University CSSE COVID-19 Data") +
+  theme(
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0, size = 15, face = "bold"),
+        axis.text.y = element_text(angle = 0, hjust = 1, size = 18, face = "bold"), 
+        legend.text = element_text(size = 16), 
+        legend.key.size = unit(1.5, 'lines'),
+        plot.title = element_text(size = 24, face = "bold"),
+        plot.subtitle = element_text(size = 18),
+        plot.caption = element_text(hjust = 0, size = 12, face = "bold", color = "black")
+       )
+
+#Mostramos el gráfico por pantalla:
+
+grafico
+```
+
